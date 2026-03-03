@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="kk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0a2a66" />
+  <title>KGI APK MSH RK | Links</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* Твои оригинальные стили сохранены полностью */
+    :root{--bg1:#050b1a;--bg2:#071b3f;--bg3:#0a2a66;--gold:#f4c430;--stroke:rgba(255,255,255,.12);--text:rgba(255,255,255,.92);--muted:rgba(255,255,255,.68);--radius:18px;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,sans-serif;color:var(--text);background:linear-gradient(180deg, var(--bg1), var(--bg3));min-height:100vh;display:flex;align-items:center;justify-content:center;}
+    .wrap{width:min(520px, 100%);padding:20px;z-index:2}
+    .card{background:rgba(255,255,255,.05);border:1px solid var(--stroke);backdrop-filter:blur(16px);border-radius:24px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+    .top{display:flex;justify-content:space-between;margin-bottom:20px}
+    .pill{background:rgba(0,0,0,.3);padding:6px 12px;border-radius:99px;font-size:12px;border:1px solid var(--stroke)}
+    .toggle button{background:transparent;border:0;color:var(--muted);cursor:pointer;font-weight:700;padding:5px 10px}
+    .toggle button.active{color:var(--gold)}
+    .brand{text-align:center;margin-bottom:20px}
+    .emblem{width:80px;height:80px;filter:drop-shadow(0 0 10px var(--gold))}
+    .links{display:flex;flex-direction:column;gap:12px}
+    .btn{display:flex;align-items:center;justify-content:space-between;padding:14px;background:rgba(255,255,255,.08);border:1px solid var(--stroke);border-radius:var(--radius);text-decoration:none;color:inherit;transition:.3s}
+    .btn:hover{transform:translateY(-2px);background:rgba(255,255,255,.12)}
+    .btn .left{display:flex;align-items:center;gap:12px}
+    .icon{width:36px;height:36px;background:rgba(0,0,0,.3);border-radius:10px;display:grid;place-items:center}
+    .label strong{display:block;font-size:14px}
+    .label span{font-size:12px;color:var(--muted)}
+    #loader{text-align:center;padding:20px;color:var(--gold)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <main class="card">
+    <div class="top">
+      <div class="pill" id="status">● Connecting...</div>
+      <div class="toggle">
+        <button onclick="setLang('kk')" id="btnKk">KZ</button>
+        <button onclick="setLang('ru')" id="btnRu">RU</button>
+      </div>
+    </div>
+    <div class="brand">
+      <svg class="emblem" viewBox="0 0 200 200"><circle cx="100" cy="100" r="80" fill="none" stroke="gold" stroke-width="5"/><path d="M100 60 L110 85 L140 85 L115 105 L125 135 L100 115 L75 135 L85 105 L60 85 L90 85 Z" fill="gold"/></svg>
+      <h1 id="title" style="font-size:18px;margin:15px 0 5px">...</h1>
+    </div>
+    <div id="loader">Жүктөө / Загрузка...</div>
+    <nav class="links" id="links"></nav>
+  </main>
+</div>
+
+<script>
+  // ЗАМЕНИ НА СВОИ ДАННЫЕ ИЗ SUPABASE SETTINGS -> API
+  const SB_URL = "https://your-project.supabase.co";
+  const SB_KEY = "your-anon-key";
+  const supabase = exports.createClient(SB_URL, SB_KEY);
+
+  let lang = localStorage.getItem("lang") || "kk";
+  let linksData = [];
+
+  async function loadData() {
+    const { data, error } = await supabase.from('links').select('*').order('sort_order');
+    if (error) {
+      document.getElementById('status').textContent = "● Offline";
+      return;
+    }
+    linksData = data;
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('status').textContent = "● Online";
+    render();
+  }
+
+  function render() {
+    const container = document.getElementById('links');
+    container.innerHTML = "";
+    document.getElementById('title').textContent = lang === 'kk' ? "ҚР АШМ АӨК Комитеті" : "Комитет МСХ РК";
+    
+    document.getElementById('btnKk').className = lang === 'kk' ? 'active' : '';
+    document.getElementById('btnRu').className = lang === 'ru' ? 'active' : '';
+
+    linksData.forEach(l => {
+      const a = document.createElement('a');
+      a.className = 'btn';
+      a.href = l.url;
+      a.target = "_blank";
+      a.innerHTML = `
+        <div class="left">
+          <div class="icon">🔗</div>
+          <div class="label">
+            <strong>${lang === 'kk' ? l.title_kk : l.title_ru}</strong>
+            <span>${lang === 'kk' ? l.sub_kk : l.sub_ru}</span>
+          </div>
+        </div>
+        <span>➜</span>
+      `;
+      container.appendChild(a);
+    });
+  }
+
+  function setLang(l) { lang = l; localStorage.setItem("lang", l); render(); }
+  loadData();
+</script>
+</body>
+</html>
