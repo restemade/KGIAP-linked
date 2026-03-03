@@ -2,95 +2,66 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>Admin Panel | KGI</title>
+  <title>KGI Admin</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body{background:#050b1a;color:#fff;font-family:sans-serif;padding:20px}
-    .container{max-width:800px;margin:0 auto}
-    .login-box, .editor{background:#0a2a66;padding:20px;border-radius:15px;border:1px solid rgba(255,255,255,.1)}
-    input, button{display:block;width:100%;padding:12px;margin:10px 0;border-radius:8px;border:none}
-    button{background:gold;color:#000;font-weight:bold;cursor:pointer}
-    .link-item{background:rgba(255,255,255,.05);padding:15px;margin:10px 0;border-radius:10px;border:1px dashed #444}
+    .box{max-width:600px;margin:0 auto;background:#0a2a66;padding:25px;border-radius:15px}
+    input{display:block;width:100%;padding:10px;margin:10px 0;border-radius:5px;border:none}
+    button{width:100%;padding:12px;background:gold;border:none;border-radius:5px;font-weight:bold;cursor:pointer}
+    .item{border-bottom:1px solid rgba(255,255,255,.1);padding:15px 0}
     .hidden{display:none}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   </style>
 </head>
 <body>
-<div class="container">
-  <div id="authSection" class="login-box">
-    <h2>Вход в админку</h2>
+<div class="box">
+  <div id="login">
+    <h2>Админ панель</h2>
     <input type="email" id="email" placeholder="Email">
     <input type="password" id="pass" placeholder="Пароль">
-    <button onclick="login()">Войти</button>
+    <button onclick="signIn()">Войти</button>
   </div>
-
-  <div id="adminSection" class="hidden">
-    <div style="display:flex;justify-content:space-between">
-      <h2>Управление ссылками</h2>
-      <button onclick="logout()" style="width:auto;background:red;color:#fff">Выйти</button>
-    </div>
-    <div id="linksList"></div>
-    <button onclick="addNewLink()" style="background:#28a745;color:#fff">+ Добавить новую ссылку</button>
+  <div id="panel" class="hidden">
+    <h2>Управление ссылками</h2>
+    <div id="list"></div>
+    <button onclick="add()" style="background:#28a745;color:#fff;margin-top:20px">+ Добавить ссылку</button>
   </div>
 </div>
-
 <script>
-  const SB_URL = "https://your-project.supabase.co";
-  const SB_KEY = "your-anon-key";
-  const supabase = exports.createClient(SB_URL, SB_KEY);
-
-  async function login() {
+  const supabase = supabase.createClient('https://cyfbjuloedprccdvyftw.supabase.co', 'sb_publishable_LjTrJ1dkG9Emd7_EBHjc7w_XkntS7vM');
+  
+  async function signIn() {
     const { error } = await supabase.auth.signInWithPassword({
       email: document.getElementById('email').value,
       password: document.getElementById('pass').value
     });
-    if (error) alert(error.message); else checkUser();
+    if (error) alert(error.message); else check();
   }
 
-  async function checkUser() {
+  async function check() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      document.getElementById('authSection').classList.add('hidden');
-      document.getElementById('adminSection').classList.remove('hidden');
-      loadLinks();
+      document.getElementById('login').classList.add('hidden');
+      document.getElementById('panel').classList.remove('hidden');
+      load();
     }
   }
 
-  async function loadLinks() {
+  async function load() {
     const { data } = await supabase.from('links').select('*').order('sort_order');
-    const list = document.getElementById('linksList');
-    list.innerHTML = data.map(l => `
-      <div class="link-item">
-        <div class="grid">
-          <input onchange="upd('${l.id}', 'title_kk', this.value)" value="${l.title_kk}" placeholder="Заголовок KZ">
-          <input onchange="upd('${l.id}', 'title_ru', this.value)" value="${l.title_ru}" placeholder="Заголовок RU">
-          <input onchange="upd('${l.id}', 'sub_kk', this.value)" value="${l.sub_kk}" placeholder="Подзаголовок KZ">
-          <input onchange="upd('${l.id}', 'sub_ru', this.value)" value="${l.sub_ru}" placeholder="Подзаголовок RU">
-        </div>
-        <input onchange="upd('${l.id}', 'url', this.value)" value="${l.url}" placeholder="URL (https://...)">
-        <button onclick="del('${l.id}')" style="background:#ff4444;padding:5px;font-size:12px">Удалить</button>
+    document.getElementById('list').innerHTML = data.map(l => `
+      <div class="item">
+        <input value="${l.title_ru}" onchange="upd('${l.id}','title_ru',this.value)" placeholder="Заголовок RU">
+        <input value="${l.url}" onchange="upd('${l.id}','url',this.value)" placeholder="URL">
+        <button onclick="del('${l.id}')" style="background:red;width:auto;padding:5px 10px">Удалить</button>
       </div>
     `).join('');
   }
 
-  async function upd(id, field, val) {
-    await supabase.from('links').update({ [field]: val }).eq('id', id);
-  }
-
-  async function addNewLink() {
-    await supabase.from('links').insert([{ title_kk: 'Жаңа', title_ru: 'Новая', url: 'https://' }]);
-    loadLinks();
-  }
-
-  async function del(id) {
-    if(confirm('Удалить?')) {
-      await supabase.from('links').delete().eq('id', id);
-      loadLinks();
-    }
-  }
-
-  async function logout() { await supabase.auth.signOut(); location.reload(); }
-  checkUser();
+  async function upd(id, field, val) { await supabase.from('links').update({[field]: val}).eq('id', id); }
+  async function add() { await supabase.from('links').insert([{title_ru:'Новая', url:'#'}]); load(); }
+  async function del(id) { if(confirm('Удалить?')) { await supabase.from('links').delete().eq('id', id); load(); } }
+  check();
 </script>
 </body>
 </html>
